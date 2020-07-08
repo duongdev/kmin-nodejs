@@ -1,0 +1,24 @@
+<html>
+
+<head></head>
+
+<body>
+  {{>header}}
+  <div style="height: 100vh; display: flex;">
+    <div>
+      {{>sidebar}}
+    </div>
+    <aside>
+      {{#if countryStats}}
+      {{#list countryStats}}
+      {{key}}: <strong>{{value}}</strong>
+      {{/list}}
+      {{else}}
+      <div>Country not found</div>
+      {{/if}}
+    </aside>
+  </div>
+
+</body>
+
+</html>
