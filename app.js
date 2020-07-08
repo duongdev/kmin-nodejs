@@ -2,7 +2,7 @@ const express = require("express");
 const hbs = require("hbs");
 const { default: axios } = require("axios");
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 const app = express();
 app.set("view engine", "hbs");
