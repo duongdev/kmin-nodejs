@@ -5,9 +5,7 @@ const Task = require("./models/Task");
 const app = express();
 
 const config = {
-  uri: "mongodb://localhost:27017",
-  db: "kmin-todo-list",
-  collection: "tasks",
+  uri: "mongodb://localhost:27017/kmin-todo-list",
   serverPort: 4000,
 };
 
@@ -50,11 +48,11 @@ app.patch(`/tasks/:taskId`, (req, res) => {
 });
 
 mongoose
-  .connect(`${config.uri}/${config.db}`, {
+  .connect(config.uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then((connection) => {
+  .then(() => {
     console.log("Connected to MongoDB");
 
     app.listen(config.serverPort, () => {
