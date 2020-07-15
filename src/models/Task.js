@@ -16,6 +16,10 @@ const Task = mongoose.model("Task", {
     required: true,
     default: () => new Date(),
   },
+  userId: {
+    type: mongoose.Types.ObjectId,
+    required: true,
+  },
 });
 
 module.exports = Task;
