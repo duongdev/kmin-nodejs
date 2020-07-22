@@ -3,16 +3,23 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const Task = require("../models/Task");
+const { parseToken, requiresUser } = require("../middlewares/auth");
 
 // https://expressjs.com/en/api.html#express.router
 const router = express.Router({ mergeParams: true });
 
+router.use(parseToken, requiresUser);
+
 router.get("/", async (req, res) => {
+  const userId = req.user._id;
+
   let { page = "1", perPage = "10" } = req.query;
   page = +page;
   perPage = +perPage;
 
-  let query = {};
+  let query = {
+    userId,
+  };
 
   if (req.query.done === "true") {
     query.done = true;
@@ -38,6 +45,7 @@ router.get("/", async (req, res) => {
 });
 
 router.delete("/:taskId", (req, res) => {
+  const userId = req.user._id;
   const { taskId } = req.params;
 
   if (!mongoose.isValidObjectId(taskId)) {
@@ -45,7 +53,7 @@ router.delete("/:taskId", (req, res) => {
     return;
   }
 
-  Task.findByIdAndRemove(taskId).then((removedTask) => {
+  Task.findOneAndRemove({ _id: taskId, userId }).then((removedTask) => {
     if (!removedTask) {
       res.status(404).json({ message: "TaskID not found" });
       return;
@@ -55,6 +63,7 @@ router.delete("/:taskId", (req, res) => {
 });
 
 router.put("/:taskId", (req, res) => {
+  const userId = req.user._id;
   const { taskId } = req.params;
   const { content, done } = req.query;
 
@@ -75,20 +84,22 @@ router.put("/:taskId", (req, res) => {
     update.done = false;
   }
 
-  Task.findByIdAndUpdate(taskId, update, { new: true }).then((updatedTask) => {
-    if (!updatedTask) {
-      res.status(404).json({ message: "TaskID not found" });
-      return;
+  Task.findOneAndUpdate({ _id: taskId, userId }, update, { new: true }).then(
+    (updatedTask) => {
+      if (!updatedTask) {
+        res.status(404).json({ message: "TaskID not found" });
+        return;
+      }
+      res.json(updatedTask);
     }
-    res.json(updatedTask);
-  });
+  );
 });
 
 router.post("/", (req, res) => {
-  const { userId } = req.params;
   const { content } = req.body;
+  const user = req.user;
 
-  Task.create({ content, userId }).then((createdTask) => {
+  Task.create({ content, userId: user._id }).then((createdTask) => {
     res.json(createdTask);
   });
 });

@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 
 const tasksRouter = require("./routes/tasks");
 const usersRouter = require("./routes/users");
+const { parseToken } = require("./middlewares/auth");
 
 const app = express();
 
@@ -15,14 +16,20 @@ const config = {
   serverPort: 4000,
 };
 
+app.use(parseToken);
+
 /**
  * 1. Filter task by done: GET /tasks?done=true|false
  * 2. Remove a task by ID: DELETE /tasks/:taskId
  * 3. Edit: PUT /tasks/:taskId
  * 4. Pagination GET /tasks?page=1&perPage=10
  */
-// app.use("/tasks", tasksRouter);
+app.use("/tasks", tasksRouter);
 app.use("/users", usersRouter);
+
+app.use(function (err, req, res, next) {
+  res.status(500).send({ message: err.message, status: 500 });
+});
 
 mongoose
   .connect(config.uri, {
