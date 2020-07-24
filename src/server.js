@@ -1,12 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const path = require("path");
 
 const tasksRouter = require("./routes/tasks");
 const usersRouter = require("./routes/users");
 const { parseToken } = require("./middlewares/auth");
 
 const app = express();
+
+app.use(express.static(path.join(__dirname, "../web")));
 
 // http://expressjs.com/en/resources/middleware/body-parser.html
 app.use(bodyParser.json());

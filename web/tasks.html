@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tasks</title>
+  </head>
+  <body>
+    <div>Hello <span id="email">loading...</span>, Tasks</div>
+
+    <form id="create-task">
+      <input name="task-content" placeholder="Enter task..." />
+      <button type="submit">Create</button>
+    </form>
+
+    Tasks:
+    <ul id="task-list">
+      loading...
+    </ul>
+
+    <div id="pagination">...</div>
+  </body>
+
+  <script>
+    window.addEventListener("load", () => {
+      const getCookie = () => {
+        return document.cookie
+          .split(";")
+          .reduce((cookieObject, cookieString) => {
+            let splitCookie = cookieString.split("=").map((cookiePart) => {
+              return cookiePart.trim();
+            });
+            try {
+              cookieObject[splitCookie[0]] = JSON.parse(splitCookie[1]);
+            } catch (error) {
+              cookieObject[splitCookie[0]] = splitCookie[1];
+            }
+            return cookieObject;
+          }, {});
+      };
+
+      const getUser = async () => {
+        const user = await (
+          await fetch("http://localhost:4000/users/me", {
+            headers: {
+              token: getCookie().token,
+            },
+          })
+        ).json();
+
+        document.getElementById("email").innerText = user.email;
+      };
+
+      getUser();
+
+      const getTasks = async () => {
+        const pagedTask = await (
+          await fetch("/tasks", {
+            headers: {
+              token: getCookie().token,
+            },
+          })
+        ).json();
+
+        const { tasks } = pagedTask;
+
+        if (tasks.length === 0) {
+          document.getElementById("task-list").innerHTML = "No tasks created.";
+        } else {
+          document.getElementById("task-list").innerHTML = tasks.reduce(
+            (html, task) => {
+              return html + `<li id="task-${task.id}">${task.content}</li>`;
+            },
+            ""
+          );
+        }
+      };
+
+      getTasks();
+
+      document
+        .getElementById("create-task")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const task = await (
+            await fetch("/tasks", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                token: getCookie().token,
+              },
+              body: JSON.stringify({
+                content: document.querySelector(
+                  "#create-task input[name=task-content]"
+                ).value,
+              }),
+            })
+          ).json();
+
+          document.querySelector(
+            "#create-task input[name=task-content]"
+          ).value = "";
+          document
+            .querySelector("#create-task input[name=task-content]")
+            .focus();
+
+          getTasks();
+        });
+    });
+  </script>
+</html>
