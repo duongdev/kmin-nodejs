@@ -56,6 +56,4 @@ router.get("/me", requiresUser, async (req, res) => {
   res.json(user);
 });
 
-// router.use("/:userId/tasks", tasksRoute);
-
 module.exports = router;
