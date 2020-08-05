@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/light.min.css"
+    />
     <title>Tasks</title>
   </head>
   <body>
@@ -22,23 +26,61 @@
   </body>
 
   <script>
-    window.addEventListener("load", () => {
-      const getCookie = () => {
-        return document.cookie
-          .split(";")
-          .reduce((cookieObject, cookieString) => {
-            let splitCookie = cookieString.split("=").map((cookiePart) => {
-              return cookiePart.trim();
-            });
-            try {
-              cookieObject[splitCookie[0]] = JSON.parse(splitCookie[1]);
-            } catch (error) {
-              cookieObject[splitCookie[0]] = splitCookie[1];
-            }
-            return cookieObject;
-          }, {});
-      };
+    const getCookie = () => {
+      return document.cookie.split(";").reduce((cookieObject, cookieString) => {
+        let splitCookie = cookieString.split("=").map((cookiePart) => {
+          return cookiePart.trim();
+        });
+        try {
+          cookieObject[splitCookie[0]] = JSON.parse(splitCookie[1]);
+        } catch (error) {
+          cookieObject[splitCookie[0]] = splitCookie[1];
+        }
+        return cookieObject;
+      }, {});
+    };
 
+    const renderTask = (task) =>
+      `<li onclick="toggleTaskDone('${task._id}', ${!task.done})" id="task-${
+        task._id
+      }" class="task-item ${task.done ? "done" : ""}">${task.content}</li>`;
+
+    const getTasks = async () => {
+      const pagedTask = await (
+        await fetch(`/tasks${window.location.search}`, {
+          headers: {
+            token: getCookie().token,
+          },
+        })
+      ).json();
+
+      const { tasks, total, page: currentPage, perPage } = pagedTask;
+
+      if (tasks.length === 0) {
+        document.getElementById("task-list").innerHTML = "No tasks created.";
+      } else {
+        document.getElementById("task-list").innerHTML = tasks.reduce(
+          (html, task) => {
+            return html + renderTask(task);
+          },
+          ""
+        );
+      }
+
+      const totalPages = Math.floor(total / perPage) + 1;
+      let paginationContent = "";
+
+      for (let page = 1; page <= totalPages; ++page) {
+        paginationContent +=
+          currentPage === page
+            ? `<strong>${page}</strong>`
+            : `<a href="?page=${page}">${page}</a>`;
+      }
+
+      document.getElementById("pagination").innerHTML = paginationContent;
+    };
+
+    window.addEventListener("load", () => {
       const getUser = async () => {
         const user = await (
           await fetch("http://localhost:4000/users/me", {
@@ -53,35 +95,20 @@
 
       getUser();
 
-      const getTasks = async () => {
-        const pagedTask = await (
-          await fetch("/tasks", {
-            headers: {
-              token: getCookie().token,
-            },
-          })
-        ).json();
-
-        const { tasks } = pagedTask;
-
-        if (tasks.length === 0) {
-          document.getElementById("task-list").innerHTML = "No tasks created.";
-        } else {
-          document.getElementById("task-list").innerHTML = tasks.reduce(
-            (html, task) => {
-              return html + `<li id="task-${task.id}">${task.content}</li>`;
-            },
-            ""
-          );
-        }
-      };
-
       getTasks();
 
       document
         .getElementById("create-task")
         .addEventListener("submit", async (event) => {
           event.preventDefault();
+          const taskContent = document.querySelector(
+            "#create-task input[name=task-content]"
+          ).value;
+
+          if (!taskContent) {
+            return;
+          }
+
           const task = await (
             await fetch("/tasks", {
               method: "POST",
@@ -90,12 +117,13 @@
                 token: getCookie().token,
               },
               body: JSON.stringify({
-                content: document.querySelector(
-                  "#create-task input[name=task-content]"
-                ).value,
+                content: taskContent,
               }),
             })
           ).json();
+
+          document.getElementById("task-list").innerHTML =
+            renderTask(task) + document.getElementById("task-list").innerHTML;
 
           document.querySelector(
             "#create-task input[name=task-content]"
@@ -103,9 +131,34 @@
           document
             .querySelector("#create-task input[name=task-content]")
             .focus();
-
-          getTasks();
         });
     });
+
+    async function toggleTaskDone(taskId, done) {
+      const task = await (
+        await fetch(`/tasks/${taskId}?done=${done}`, {
+          method: "PUT",
+          headers: { token: getCookie().token },
+        })
+      ).json();
+
+      getTasks();
+    }
   </script>
+
+  <style>
+    .task-item {
+      cursor: pointer;
+    }
+    .task-item.done {
+      text-decoration: line-through;
+    }
+    .task-item:hover {
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+    .task-item.done:hover {
+      text-decoration: none;
+    }
+  </style>
 </html>

@@ -3,6 +3,9 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const { requiresUser } = require("../middlewares/auth");
+const multer = require("multer");
+
+const upload = multer({ dest: "uploads/" });
 
 const { JWT_SECRET, SALT_ROUNDS } = require("../constants");
 
@@ -50,6 +53,18 @@ router.post("/sign-in", (req, res) => {
     });
   });
 });
+
+router.post(
+  "/me/avatar",
+  requiresUser,
+  upload.single("avatar"),
+  async (req, res) => {
+    const user = req.user;
+    user.avatar = req.file.filename;
+    await user.save();
+    res.json(user);
+  }
+);
 
 router.get("/me", requiresUser, async (req, res) => {
   const user = req.user;

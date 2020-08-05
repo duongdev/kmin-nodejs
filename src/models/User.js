@@ -19,6 +19,9 @@ const User = mongoose.model("User", {
     type: Date,
     default: () => new Date(),
   },
+  avatar: {
+    type: String,
+  },
 });
 
 module.exports = User;

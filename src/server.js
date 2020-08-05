@@ -5,6 +5,7 @@ const path = require("path");
 
 const tasksRouter = require("./routes/tasks");
 const usersRouter = require("./routes/users");
+const filesRouter = require("./routes/files");
 const { parseToken } = require("./middlewares/auth");
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(parseToken);
  */
 app.use("/tasks", tasksRouter);
 app.use("/users", usersRouter);
+app.use("/files", filesRouter);
 
 app.use(function (err, req, res, next) {
   res.status(500).send({ message: err.message, status: 500 });
