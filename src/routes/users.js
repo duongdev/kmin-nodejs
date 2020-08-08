@@ -15,7 +15,6 @@ const router = express.Router({ mergeParams: true });
 router.post("/", (req, res) => {
   // body-parser
   const { email, password, displayName } = req.body;
-  console.log(req.body);
 
   User.create({ email, password, displayName })
     .then((user) => {

@@ -36,15 +36,17 @@ app.use(function (err, req, res, next) {
   res.status(500).send({ message: err.message, status: 500 });
 });
 
-mongoose
-  .connect(config.uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log("Connected to MongoDB");
+// mongoose
+//   .connect(config.uri, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   })
+//   .then(() => {
+//     console.log("Connected to MongoDB");
 
-    app.listen(config.serverPort, () => {
-      console.log(`Web server is running on port ${config.serverPort}`);
-    });
-  });
+//     app.listen(config.serverPort, () => {
+//       console.log(`Web server is running on port ${config.serverPort}`);
+//     });
+//   });
+
+module.exports = app;
