@@ -1,52 +1,59 @@
-const express = require("express");
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
-const path = require("path");
+const app = require("./app");
+const http = require("http");
+const config = require("./config");
+const { send } = require("process");
+// const { initSocket } = require("./socket-io");
 
-const tasksRouter = require("./routes/tasks");
-const usersRouter = require("./routes/users");
-const filesRouter = require("./routes/files");
-const { parseToken } = require("./middlewares/auth");
+const server = http.createServer(app);
 
-const app = express();
+module.exports = server;
 
-app.use(express.static(path.join(__dirname, "../web")));
+mongoose
+  .connect(config.uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  });
 
-// http://expressjs.com/en/resources/middleware/body-parser.html
-app.use(bodyParser.json());
+const io = require("socket.io")(server);
 
-const config = {
-  uri: "mongodb://localhost:27017/kmin-todo-list",
-  serverPort: 4000,
-};
+io.on("connect", (socket) => {
+  // either with send()
+  socket.send("Hello!");
 
-app.use(parseToken);
+  // socket.id = Object.keys(io.sockets.connected).length;
 
-/**
- * 1. Filter task by done: GET /tasks?done=true|false
- * 2. Remove a task by ID: DELETE /tasks/:taskId
- * 3. Edit: PUT /tasks/:taskId
- * 4. Pagination GET /tasks?page=1&perPage=10
- */
-app.use("/tasks", tasksRouter);
-app.use("/users", usersRouter);
-app.use("/files", filesRouter);
+  // or with emit() and custom event names
+  socket.emit("greetings", "Hey!", { ms: "jane" }, Buffer.from([4, 3, 3, 1]));
 
-app.use(function (err, req, res, next) {
-  res.status(500).send({ message: err.message, status: 500 });
+  // handle the event sent with socket.send()
+  socket.on("message", (data) => {
+    console.log(data);
+    // socket.send(Date.now());
+    io.sockets.send(Date.now());
+    console.log("rooms", socket.rooms);
+  });
+
+  socket.on("join-room", (room) => {
+    console.log(`${socket.id} join ${room}`);
+    socket.join(room);
+    io.to(room).emit("member-joined", `${socket.id} join ${room}`);
+  });
 });
 
-// mongoose
-//   .connect(config.uri, {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true,
-//   })
-//   .then(() => {
-//     console.log("Connected to MongoDB");
+app.post("/:room/message", (req, res) => {
+  const message = req.body.message;
+  const room = req.params.room;
+  console.log({ room, message });
+  io.to(room).send(message);
+  res.json("ok");
+});
 
-//     app.listen(config.serverPort, () => {
-//       console.log(`Web server is running on port ${config.serverPort}`);
-//     });
-//   });
+module.exports = { server, io };
 
-module.exports = app;
+server.listen(config.serverPort, () => {
+  console.log(`Web server is running on port ${config.serverPort}`);
+});

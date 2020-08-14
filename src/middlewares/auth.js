@@ -3,7 +3,6 @@ const User = require("../models/User");
 const JWT_SECRET = require("../constants").JWT_SECRET;
 
 const parseToken = async (req, res, next) => {
-  console.log("parseToken");
   const token = req.headers.token;
 
   try {

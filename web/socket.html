@@ -1,0 +1,41 @@
+<script src="/socket.io/socket.io.js"></script>
+
+<html>
+  <button id="btn">send</button>
+</html>
+
+<script>
+  const socket = io();
+
+  socket.on("connect", () => {
+    // either with send()
+    socket.send("Hello!");
+
+    // or with emit() and custom event names
+    socket.emit(
+      "salutations",
+      "Hello!",
+      { mr: "john" },
+      Uint8Array.from([1, 2, 3, 4])
+    );
+
+    socket.emit(
+      "join-room",
+      location.search.replace("?", "").match(/room=(.*?)(&|$)/)[1] || ""
+    );
+  });
+
+  socket.on("message", (data) => {
+    console.log(data);
+  });
+
+  socket.on("member-joined", (data) => {
+    console.log("[member-joined]", data);
+  });
+
+  window.addEventListener("load", () => {
+    document.getElementById("btn").addEventListener("click", (event) => {
+      socket.send(Date.now());
+    });
+  });
+</script>
